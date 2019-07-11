@@ -24,11 +24,17 @@ private:
     rs2::frame color_frame;
     rs2::colorizer color_map;
 
+    //rs2::depth_frame depth_frame;
+    rs2::frameset aligned_frames;
+    float distance;
+
     cv::Mat color_mat_;
     int calib_width = 1920;
     int calib_height = 1080;
     int color_width_ = 640;
     int color_height_ = 480;
+    int depth_width_ = 640;
+    int depth_height_ = 480;
     int width_ = 640;
     int height_ = 480;
     int fps_ = 30;
@@ -74,6 +80,7 @@ private:
     void show();
     void writeImage();
     void writeRotation();
+    void setAligned_frames();
 
     loadParams *load;
 };

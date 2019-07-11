@@ -38,7 +38,7 @@ void ConvertPCL::startSenser(){
     rs2::config config;
     config.enable_stream(rs2_stream::RS2_STREAM_COLOR, color_width_, color_height_, rs2_format::RS2_FORMAT_BGR8, fps_);
     //config.enable_stream(RS2_STREAM_ACCEL);
-    //config.enable_stream(rs2_stream::RS2_STREAM_DEPTH, depth_width_, depth_height_, rs2_format::RS2_FORMAT_Z16, fps_);
+    config.enable_stream(rs2_stream::RS2_STREAM_DEPTH, depth_width_, depth_height_, rs2_format::RS2_FORMAT_Z16, fps_);
 
     pipeline_profile = pipeline.start(config);
 }
@@ -116,6 +116,10 @@ void ConvertPCL::detectArUco() {
             cv::aruco::drawAxis(color_mat_, camera_matrix, dist_coeffs, rvecs[i], tvecs[i], 0.1);
         }
         **/
+
+       setAligned_frames();
+       rs2::depth_frame depth_frame = aligned_frames.get_depth_frame();
+       distance = depth_frame.get_distance(corners[0][0].x, corners[0][0].y );
     }
 }
 
@@ -159,6 +163,8 @@ void ConvertPCL::writeRotation() {
     std::cout << " x_t: " << -tvecs[0] 
               << " y_t: " << -tvecs[1] 
               << " z_t: " << -tvecs[2] << std::endl;
+
+    std::cout << " distance: " << distance << std::endl; 
     
     if( (fp=fopen("save.csv","a")) != NULL){
         
@@ -166,6 +172,18 @@ void ConvertPCL::writeRotation() {
         fprintf(fp,"%f,%f,%f\n", rvec_aruco_to_cam[0], rvec_aruco_to_cam[1], rvec_aruco_to_cam[2]);
         fprintf(fp,"%f,%f,%f\n", -tvecs[0], -tvecs[1], -tvecs[2]);
         fclose(fp);
+    }
+}
+
+void ConvertPCL::setAligned_frames() {
+
+    // color_frameとdepth_frameの辻褄合わせ
+    rs2::align align(rs2_stream::RS2_STREAM_COLOR);
+
+    aligned_frames = align.process(frameset);
+    if( !aligned_frames.size() ) {
+        std::cout << "NO" << std::endl;
+        exit(0);
     }
 }
 
