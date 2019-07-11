@@ -25,6 +25,8 @@ private:
     rs2::colorizer color_map;
 
     cv::Mat color_mat_;
+    int calib_width = 1920;
+    int calib_height = 1080;
     int color_width_ = 640;
     int color_height_ = 480;
     int width_ = 640;
@@ -36,9 +38,11 @@ private:
     const int markers_x           = 3;      // x方向に配置するマーカー数
     const int markers_y           = 2;      // y方向に配置するマーカー数
     const float marker_length     = 0.08;    // マーカーのサイズ [m]
-    const float marker_separation = 0.015;   // マーカー間の間隔 [m]
+    const float marker_separation = 0.014;   // マーカー間の間隔 [m]
 
     std::vector<int> ids;
+    //std::vector<cv::Vec3d> rvecs;
+    //std::vector<cv::Vec3d> tvecs;
     cv::Vec3d rvecs;
     cv::Vec3d tvecs;
     cv::Vec3d rvec_aruco_to_cam;
@@ -46,8 +50,7 @@ private:
     cv::Mat dist_coeffs;
 
     std::ostringstream vector_to_marker;
-    float actual_marker_length = 0.08;
-    //cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
+    float actual_marker_length = 0.195;
     cv::Ptr<cv::aruco::Dictionary> dictionary;
     std::vector<std::vector<cv::Point2f>> corners;
     cv::Ptr<cv::aruco::GridBoard> grid_board;

@@ -4,7 +4,7 @@
 #include "convert.hpp"
 
 ConvertPCL::ConvertPCL() : 
-    camera_matrix (cv::Mat_<float>(3, 3)),
+    camera_matrix (cv::Mat_<double>(3, 3)),
     dist_coeffs (cv::Mat_<float>(1, 5)),
     degree (180/3.1415926),
     count (0)
@@ -37,6 +37,7 @@ void ConvertPCL::startSenser(){
     // Set Device Config
     rs2::config config;
     config.enable_stream(rs2_stream::RS2_STREAM_COLOR, color_width_, color_height_, rs2_format::RS2_FORMAT_BGR8, fps_);
+    //config.enable_stream(RS2_STREAM_ACCEL);
     //config.enable_stream(rs2_stream::RS2_STREAM_DEPTH, depth_width_, depth_height_, rs2_format::RS2_FORMAT_Z16, fps_);
 
     pipeline_profile = pipeline.start(config);
@@ -46,18 +47,33 @@ void ConvertPCL::setupParams() {
 
     load->loadCameraParams();
 
-    for(int i; i<3; i++){
-        for(int j; j<3; j++){
-            camera_matrix.at<float>(i,j) = 0;
+    for(int i=0; i<3; i++){
+        for(int j=0; j<3; j++){
+            camera_matrix.at<float>(i,j) = 0.00;
         }
     }
 
-    camera_matrix.at<float>(0,0) = load->focal[0];
-    camera_matrix.at<float>(1,1) = load->focal[1];
-    camera_matrix.at<float>(0,3) = load->principal[0];
-    camera_matrix.at<float>(1,3) = load->principal[1];
+    load->focal[0] = load->focal[0] * color_width_ / calib_width;
+    load->focal[1] = load->focal[1] * color_height_ / calib_height;
+    load->principal[0] = load->principal[0] * color_width_ / calib_width;
+    load->principal[1] = load->principal[1] * color_height_ / calib_height;
 
-    for(int i; i<load->dist.size(); i++){
+    camera_matrix.at<double>(0,0) = load->focal[0];
+    camera_matrix.at<double>(1,1) = load->focal[1];
+    camera_matrix.at<double>(0,2) = load->principal[0];
+    camera_matrix.at<double>(1,2) = load->principal[1];
+    camera_matrix.at<double>(2,2) = 1.0;
+
+
+    for(int i=0; i<3; i++){
+        std::cout << camera_matrix.at<double>(i,0) << " " 
+                  << camera_matrix.at<double>(i,1) << " " 
+                  << camera_matrix.at<double>(i,2) << std::endl;
+    }
+
+
+
+    for(int i=0; i<load->dist.size(); i++){
 
         dist_coeffs.at<float>(0,i) = load->dist[i];
     }
@@ -68,7 +84,7 @@ void ConvertPCL::setupArUco() {
     dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::PREDEFINED_DICTIONARY_NAME::DICT_4X4_50);
     //cv::FileStorage fs("calibration_params.yml", cv::FileStorage::READ);
     
-    grid_board = cv::aruco::GridBoard::create(markers_x, markers_y, marker_length, marker_separation,dictionary);
+    grid_board = cv::aruco::GridBoard::create(markers_x, markers_y, marker_length, marker_separation, dictionary);
     board = grid_board.staticCast<cv::aruco::Board>();
 }
 
@@ -86,15 +102,20 @@ void ConvertPCL::updateFrame() {
 void ConvertPCL::detectArUco() {
 
     cv::aruco::detectMarkers(color_mat_, dictionary, corners, ids);
-    //cv::aruco::estimatePoseSingleMarkers(corners, actual_marker_length, camera_matrix, dist_coeffs, rvecs, tvecs);
             
     if(ids.size() > 0) {
 
-
         cv::aruco::drawDetectedMarkers(color_mat_, corners, ids);
+        //cv::aruco::estimatePoseSingleMarkers(corners, actual_marker_length, camera_matrix, dist_coeffs, rvecs, tvecs);
 
-        cv::aruco::estimatePoseBoard(corners,ids,board,camera_matrix,dist_coeffs,rvecs,tvecs);
+        cv::aruco::estimatePoseBoard(corners, ids, grid_board, camera_matrix, dist_coeffs, rvecs, tvecs);
         cv::aruco::drawAxis(color_mat_, camera_matrix, dist_coeffs, rvecs, tvecs, 0.1);
+ 
+        /** 
+        for (int i=0; i<ids.size(); i++) {
+            cv::aruco::drawAxis(color_mat_, camera_matrix, dist_coeffs, rvecs[i], tvecs[i], 0.1);
+        }
+        **/
     }
 }
 
@@ -115,6 +136,15 @@ void ConvertPCL::writeImage() {
 
 void ConvertPCL::writeRotation() {
 
+    /**
+    if (rs2::motion_frame gyro_frame = frameset.first_or_default(RS2_STREAM_ACCEL))
+    {
+        rs2_vector gyro_sample = gyro_frame.get_motion_data();
+        float theta_x = std::atan(gyro_sample.z/gyro_sample.y); 
+        std::cout << " IMU_x_R: " << theta_x*degree+90 << std::endl;
+    }
+    **/
+
     cv::Mat R;
     cv::Rodrigues(rvecs, R);
 
@@ -126,14 +156,14 @@ void ConvertPCL::writeRotation() {
               << " y_R: " << rvec_aruco_to_cam[1]*degree 
               << " z_R: " << rvec_aruco_to_cam[2]*degree << std::endl;
 
-    std::cout << " x_t: " << -tvecs[0]*degree 
-              << " y_t: " << -tvecs[1]*degree 
-              << " z_t: " << -tvecs[2]*degree << std::endl;
+    std::cout << " x_t: " << -tvecs[0] 
+              << " y_t: " << -tvecs[1] 
+              << " z_t: " << -tvecs[2] << std::endl;
     
     if( (fp=fopen("save.csv","a")) != NULL){
         
         fprintf(fp,"step %d,\n", count);
-        fprintf(fp,"%f,%f,%f\n", rvecs[0], rvecs[1], rvecs[2]);
+        fprintf(fp,"%f,%f,%f\n", rvec_aruco_to_cam[0], rvec_aruco_to_cam[1], rvec_aruco_to_cam[2]);
         fprintf(fp,"%f,%f,%f\n", -tvecs[0], -tvecs[1], -tvecs[2]);
         fclose(fp);
     }
