@@ -35,16 +35,18 @@ private:
 
     const int markers_x           = 3;      // x方向に配置するマーカー数
     const int markers_y           = 2;      // y方向に配置するマーカー数
-    const float marker_length     = 0.2;    // マーカーのサイズ
-    const float marker_separation = 0.07;   // マーカー間の間隔
+    const float marker_length     = 0.08;    // マーカーのサイズ [m]
+    const float marker_separation = 0.015;   // マーカー間の間隔 [m]
 
     std::vector<int> ids;
-    cv::Vec3d rvecs, tvecs;
+    cv::Vec3d rvecs;
+    cv::Vec3d tvecs;
+    cv::Vec3d rvec_aruco_to_cam;
     cv::Mat camera_matrix;
     cv::Mat dist_coeffs;
 
     std::ostringstream vector_to_marker;
-    float actual_marker_length = 0.15;
+    float actual_marker_length = 0.08;
     //cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
     cv::Ptr<cv::aruco::Dictionary> dictionary;
     std::vector<std::vector<cv::Point2f>> corners;

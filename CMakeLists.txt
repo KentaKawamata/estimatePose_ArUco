@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.12)
 
 set(SOURCE_NAME
-        convert.cpp
-        convert.hpp)
+        src/loadParams.hpp
+        src/convert.cpp
+        src/convert.hpp)
 
 function(Flag flag init_flag flag_message)
     if(NOT DEFINED ${flag})
@@ -13,8 +14,6 @@ endfunction(Flag)
 Flag(USE_Boost true "Find and link Boost library")
 Flag(USE_CV true "Find and link OpenCV library")
 Flag(USE_RS2 true "Find and link librealsense2 library")
-Flag(USE_PCL true "Find and link Point Cloud Library")
-Flag(USE_ZED true "Find and link ZED Stereo Camera SDK")
 
 #project : プログラム全体の構成単位
 #基本的にプログラム全体を格納しているディレクトリの名前をプロジェクト名とする
@@ -86,50 +85,5 @@ if(USE_RS2)
     target_link_libraries(${PROJECT_NAME} ${realsense2_LIBRARY})
 
 endif(USE_RS2)
-
-if(USE_PCL)
-    find_package(PCL 1.2 REQUIRED)
-
-    if(PCL_FOUND)
-        message("---- Found PCL ${PCL_INCLUDE_DIRS}")
-        #set(INCLUDE_DIRECTORIES ${INCLUDE_DIRECTORIES} ${PCL_INCLUDE_DIRS})
-        include_directories(${PCL_INCLUDE_DIRS})
-        link_directories(${PCL_LIBRARY_DIRS})
-        add_definitions(${PCL_DEFINITIONS})
-
-    else(PCL_FOUND)
-        message(FATAL_ERROR "---- Not Found PCL")
-
-    endif(PCL_FOUND)
-
-    set(ALL_LINK_LIBRARIES ${ALL_LINK_LIBRARIES} ${PCL_LIBRARIES})
-    target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES})
-
-endif(USE_PCL)
-
-if(USE_ZED)
-    find_package(ZED 2.3 REQUIRED)
-
-    if(ZED_FOUND)
-        message("---- Found ZED ${ZED_INCLUDE_DIRS}")
-        find_package(CUDA ${ZED_CUDA_VERSION} EXACT REQUIRED)
-        
-        include_directories(${CUDA_INCLUDE_DIRS})
-        include_directories(${ZED_INCLUDE_DIRS})
-        include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-        link_directories(${ZED_LIBRARY_DIR})
-        link_directories(${CUDA_LIBRARY_DIRS})
-
-    else(ZED_FOUND)
-        message(FATAL_ERROR "---- Not Found ZED")
-
-    endif(ZED_FOUND)
-
-    TARGET_LINK_LIBRARIES(${PROJECT_NAME}
-        ${ZED_LIBRARIES}
-        ${CUDA_CUDA_LIBRARY} ${CUDA_CUDART_LIBRARY} ${CUDA_NPP_LIBRARIES_ZED} )
-
-endif(USE_ZED)
 
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} -lpthread -lm)

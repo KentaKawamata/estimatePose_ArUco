@@ -115,8 +115,16 @@ void ConvertPCL::writeImage() {
 
 void ConvertPCL::writeRotation() {
 
+    cv::Mat R;
+    cv::Rodrigues(rvecs, R);
+
+    R = R.t();
+    cv::Rodrigues(R, rvec_aruco_to_cam);
+
     FILE *fp;
-    std::cout <<"x: " << rvecs[0]*degree << " y: " << rvecs[1]*degree << " z: "<< rvecs[2]*degree <<std::endl;
+    std::cout << " x: " << rvec_aruco_to_cam[0]*degree 
+              << " y: " << rvec_aruco_to_cam[1]*degree 
+              << " z: " << rvec_aruco_to_cam[2]*degree << std::endl;
     
     if( (fp=fopen("save.csv","a")) != NULL){
         
