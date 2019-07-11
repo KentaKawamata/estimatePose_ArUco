@@ -122,14 +122,19 @@ void ConvertPCL::writeRotation() {
     cv::Rodrigues(R, rvec_aruco_to_cam);
 
     FILE *fp;
-    std::cout << " x: " << rvec_aruco_to_cam[0]*degree 
-              << " y: " << rvec_aruco_to_cam[1]*degree 
-              << " z: " << rvec_aruco_to_cam[2]*degree << std::endl;
+    std::cout << " x_R: " << rvec_aruco_to_cam[0]*degree 
+              << " y_R: " << rvec_aruco_to_cam[1]*degree 
+              << " z_R: " << rvec_aruco_to_cam[2]*degree << std::endl;
+
+    std::cout << " x_t: " << -tvecs[0]*degree 
+              << " y_t: " << -tvecs[1]*degree 
+              << " z_t: " << -tvecs[2]*degree << std::endl;
     
     if( (fp=fopen("save.csv","a")) != NULL){
         
-        fprintf(fp,"step %d,\n",count);
-        fprintf(fp,"%f,%f,%f\n",rvecs[0],rvecs[1],rvecs[2]);
+        fprintf(fp,"step %d,\n", count);
+        fprintf(fp,"%f,%f,%f\n", rvecs[0], rvecs[1], rvecs[2]);
+        fprintf(fp,"%f,%f,%f\n", -tvecs[0], -tvecs[1], -tvecs[2]);
         fclose(fp);
     }
 }
